@@ -1,0 +1,22 @@
+{
+    "name": "Somfy",
+    "docs": "https://github.com/fahrer16/udi-somfy-poly",
+    "type": "python3",
+    "executable": "somfy-urts-poly.py",
+    "install": "install.sh",
+    "description": "Somfy URTSii Node Server",
+    "notice": "\"Somfy\" is trademarked., see https://www.somfysystems.com/ for more information. This Node Server is neither developed by nor endorsed by Somfy, Universal Devices, Brian Feeney, or any other company responsible for the manufacture, development, or distribution of Somfy equipment.",
+    "shortPoll": "5",
+    "longPoll": "60",
+    "credits": [
+        {
+            "title": "polySomfy: A Python library for Somfy URTSii Shade Controllers",
+            "author": "Brian Feeney",
+            "version": "2.0.0",
+            "date": "December 21, 2017",
+            "source": "https://github.com/fahrer16/udi-somfy-poly",
+            "license": "https://github.com/fahrer16/udi-somfy-poly/blob/master/LICENSE"
+        }
+    ]
+}
+

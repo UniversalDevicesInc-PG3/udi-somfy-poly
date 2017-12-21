@@ -1,0 +1,20 @@
+# controller
+ND-controller-NAME = Somfy URTSii
+ND-controller-ICON = Output
+CMD-ctl-DISCOVER-NAME = Re-Discover
+ST-ctl-ST-NAME = NodeServer Online
+ST-ctl-GV0-NAME = Serial Connected
+
+# SomfyShade
+ND-somfyshade-NAME = Somfy Shade
+ND-somfyshade-ICON = Output
+ST-shade-NAME = Somfy Shade
+ST-shade-ST-NAME = Position
+ST-shade-GV1-NAME = Travel Time
+CMD-shade-DON-NAME = Open
+CMD-shade-DOF-NAME = Close
+CMD-shade-BRT-NAME = Up 5%
+CMD-shade-DIM-NAME = Down 5%
+CMD-shade-STOP-NAME = Stop
+CMD-shade-QUERY-NAME = Query
+CMD-shade-SET_TRAVEL_TIME-NAME = Set Travel Time

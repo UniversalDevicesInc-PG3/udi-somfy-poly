@@ -1,0 +1,16 @@
+<editors>
+    <!-- Boolean -->
+    <editor id="bool">
+        <range uom="2" />
+    </editor>
+	<!-- Somfy Seconds editor -->
+	<editor id="seconds">
+		<range uom="58" min="0" max="18" prec="1" step="1" />
+	</editor>
+
+	<!-- Somfy Position editor (percent open)-->
+	<editor id="shd_pos">
+		<range uom="51" min="0" max="100" prec="0" step="1" />
+	</editor>
+	   
+</editors>
