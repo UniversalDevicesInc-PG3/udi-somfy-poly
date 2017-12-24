@@ -4,13 +4,15 @@
     <nodeDef id="controller" nls="ctl">
         <editors />
         <sts>
-			<st id="ST" editor="bool" />
-            <st id="GV1" editor="bool" />
-		</sts>
+			    <st id="ST" editor="bool" />
+          <st id="GV1" editor="bool" />
+		    </sts>
         <cmds>
             <sends />
             <accepts>
-                <cmd id="DISCOVER" />
+              <cmd id="DISCOVER" />
+              <cmd id="CONNECT" />
+              <cmd id="DISCONNECT" />
             </accepts>
         </cmds>
     </nodeDef>
@@ -25,15 +27,15 @@
             <sends />
             <accepts>
                 <cmd id="DON">
-					<p id="" editor="shd_pos" init="ST" />
-				</cmd>
+					        <p id="" editor="shd_pos" optional="T" init="ST" />
+				        </cmd>
                 <cmd id="DOF" />
-				<cmd id="BRT" />
-				<cmd id="DIM" />
+				        <cmd id="BRT" />
+				        <cmd id="DIM" />
                 <cmd id="STOP" />
                 <cmd id="QUERY" />
                 <cmd id="SET_TRAVEL_TIME">
-                    <p id="" editor="seconds" init="GV3" />
+                    <p id="" editor="seconds" init="GV1" />
                 </cmd>
             </accepts>
         </cmds>

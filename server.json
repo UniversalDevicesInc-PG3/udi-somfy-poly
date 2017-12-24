@@ -12,7 +12,7 @@
         {
             "title": "polySomfy: A Python library for Somfy URTSii Shade Controllers",
             "author": "Brian Feeney",
-            "version": "2.0.0",
+            "version": "1.0.0",
             "date": "December 21, 2017",
             "source": "https://github.com/fahrer16/udi-somfy-poly",
             "license": "https://github.com/fahrer16/udi-somfy-poly/blob/master/LICENSE"

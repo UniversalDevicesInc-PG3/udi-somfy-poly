@@ -2,8 +2,10 @@
 ND-controller-NAME = Somfy URTSii
 ND-controller-ICON = Output
 CMD-ctl-DISCOVER-NAME = Re-Discover
+CMD-ctl-CONNECT-NAME = Connect Serial
+CMD-ctl-DISCONNECT-NAME = Disconnect Serial
 ST-ctl-ST-NAME = NodeServer Online
-ST-ctl-GV0-NAME = Serial Connected
+ST-ctl-GV1-NAME = Serial Connected
 
 # SomfyShade
 ND-somfyshade-NAME = Somfy Shade
