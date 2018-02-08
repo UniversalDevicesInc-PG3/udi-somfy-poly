@@ -231,16 +231,16 @@ class SomfyShade(polyinterface.Node):
         self.travelTime = 8
         self.setDriver('GV1',self.travelTime)
 
-    def query(self, command):
+    def query(self, command=''):
         if self.position >= 0.: self.setDriver('ST',int(self.position))
         self.setDriver('GV1',self.travelTime)
         self.reportDrivers()
         
-    def down(self, command):
+    def down(self, command=''):
         LOGGER.info('Received DOF command on %s',self.address)
         return self.setShadePosition(0)
     
-    def up5(self, command):
+    def up5(self, command=''):
         if self.position == -1:
             LOGGER.error('BRT command received on %s but current shade position not known', self.address)
             return False
@@ -248,7 +248,7 @@ class SomfyShade(polyinterface.Node):
             LOGGER.info('Received BRT command on %s', self.address)
             return self.setShadePosition(self.position + 5)
         
-    def down5(self, command):
+    def down5(self, command=''):
         if self.position == -1:
             LOGGER.error('DIM command received on %s but current shade position not known', self.address)
             return False

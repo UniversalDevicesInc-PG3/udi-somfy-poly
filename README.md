@@ -38,3 +38,4 @@ Known Issues / ToDo List:
 
 Version History:
 1.0.0: Initial version, written with python 3.5 on a Debian 9 VM on ESXi 6.5 host for Polyglot version 2.0.29 and ISY version 5.0.10E.
+1.0.1: Corrected bug in query routine with incorrect number of parameters
