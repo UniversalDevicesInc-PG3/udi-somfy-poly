@@ -5,7 +5,7 @@ based on the NodeServer template for Polyglot v2 written in Python2/3
 by Einstein.42 (James Milne) milne.james@gmail.com
 """
 
-import polyinterface
+import udi_interface
 import sys
 from threading import Timer
 import serial
@@ -14,82 +14,88 @@ from os.path import join, expanduser
 import requests
 import time
 
-LOGGER = polyinterface.LOGGER
+LOGGER = udi_interface.LOGGER
 SERVERDATA = json.load(open('server.json'))
 VERSION = SERVERDATA['credits'][0]['version']
 
-class Controller(polyinterface.Controller):
-    """
-    The Controller Class is the primary node from an ISY perspective. It is a Superclass
-    of polyinterface.Node so all methods from polyinterface.Node are available to this
-    class as well.
-
-    Class Variables:
-    self.nodes: Dictionary of nodes. Includes the Controller node. Keys are the node addresses
-    self.name: String name of the node
-    self.address: String Address of Node, must be less than 14 characters (ISY limitation)
-    self.polyConfig: Full JSON config dictionary received from Polyglot.
-    self.added: Boolean Confirmed added to ISY as primary node
-
-    Class Methods (not including the Node methods):
-    start(): Once the NodeServer config is received from Polyglot this method is automatically called.
-    addNode(polyinterface.Node): Adds Node to self.nodes and polyglot/ISY. This is called for you
-                                 on the controller itself.
-    delNode(address): Deletes a Node from the self.nodes/polyglot and ISY. Address is the Node's Address
-    longPoll(): Runs every longPoll seconds (set initially in the server.json or default 10 seconds)
-    shortPoll(): Runs every shortPoll seconds (set initially in the server.json or default 30 seconds)
-    query(): Queries and reports ALL drivers for ALL nodes to the ISY.
-    runForever(): Easy way to run forever without maxing your CPU or doing some silly 'time.sleep' nonsense
-                  this joins the underlying queue query thread and just waits for it to terminate
-                  which never happens.
-    """
-    def __init__(self, polyglot):
-        super(Controller, self).__init__(polyglot)
+class Controller(udi_interface.Node):
+    def __init__(self, polyglot, primary, address, name):
+        super(Controller, self).__init__(polyglot, primary, address, name)
+        self.poly = polyglot
         self.serialPort = ""
         self.name = 'Somfy Controller'
         self._ser = None
+        self.travelTime = {}
+
+        polyglot.subscribe(polyglot.START, self.start, address)
+        polyglot.subscribe(polyglot.CUSTOMPARAMS, self.parameterHandler)
+        polyglot.subscribe(polyglot.POLL, self.poll)
+
+        polyglot.ready()
+        polyglot.addNode(self)
+
+    def parameterHandler(self, params):
+        self.poly.Notices.clear()
+        try:
+            if 'port' in params:
+                self.serialPort = params['port']
+                LOGGER.debug('got serial port configuration from polyglot, port = %s', str(self.serialPort))
+
+            if self.serialPort == "":
+                self.poly.Notices['port'] = 'Please enter a valid port device'
+
+            for key,val in params.items():
+                if key == 'port':
+                    continue
+                self.travelTime[key] = value
+
+        except Exception as ex:
+            LOGGER.error('Error reading configuration.')
     
     def start(self):
         LOGGER.info('Starting Somfy URTSii NodeServer version %s', str(VERSION))
-        self._getSerialConfig() #Get serial port from Polyglot config
+
+        while self.serialPort == "":
+            time.sleep(1)
+
         if self.connectSerial(): LOGGER.info('Connected to serial port %s', str(self.serialPort))
         self.discover() 
         return True
 
-    def _getSerialConfig(self):
-        try:
-            if 'port' in self.polyConfig['customParams']:
-                self.serialPort = self.polyConfig['customParams']['port']
-                LOGGER.debug('got serial port configuration from polyglot, port = %s', str(self.serialPort))
-            else: 
-                LOGGER.info('"port" key not found in Polyglot configuration, using default port of "/dev/ttyUSB0"')
-                self.serialPort = "/dev/ttyUSB0" #Default to USB port
-        except Exception as ex:
-            LOGGER.error('Error reading configuration, using default of "/dev/ttyUSB0": %s', str(ex))
-            self.serialPort = "/dev/ttyUSB0" #Default to USB port
-
-    def shortPoll(self):
-        pass
-
-    def longPoll(self):
-        LOGGER.debug('Executing longPoll')
-        self.connectSerial()
+    def poll(self, polltype):
+        if 'longPoll' in polltype:
+            LOGGER.debug('Executing longPoll')
+            if self.serialPort != "":
+                self.connectSerial()
 
     def query(self):
-        for node in self.nodes:
-            self.nodes[node].reportDrivers()
+        for node in self.poly.nodes():
+            node.reportDrivers()
 
     def discover(self, *args, **kwargs):
         """Add Nodes for Somfy Blinds
-           Build address for node.  Format is SerialPort#_Address#_Channel#.  For example, 01_01_01 is serial port #1 (none other currently possible), URTS controller 1 (none other currently possible), URTS channel # (1-16)
+           Build address for node.  Format is SerialPort#_Address#_Channel#.
+           For example, 01_01_01 is serial port #1 (none other currently 
+           possible), URTS controller 1 (none other currently possible),
+           URTS channel # (1-16)
         """
         LOGGER.info('Discovering somfy nodes')
-        _address = "01_01_" #TODO: Add ability to specify multiple serial ports with multiple URTSii controllers on each port.  This will default to serial port 1, address 1 allowing a single URTSii interface
-        for ch in range(1,17): #TODO: Add ability to specify channels rather than creating all 16
-                _chAddress = _address + str(ch).rjust(2,"0")
-                _chName = "Shade_" + _chAddress
-                if _chAddress not in self.nodes:
-                    self.addNode(SomfyShade(self, self.address, _chAddress, _chName)) #TODO: Add ability to create Blinds, which use two channels (one for up/down, one for tilt)
+        _address = "01_01_"
+        """
+        TODO: Add ability to specify multiple serial ports with multiple
+        URTSii controllers on each port.  This will default to serial port
+        1, address 1 allowing a single URTSii interface
+        """
+        #TODO: Add ability to specify channels rather than creating all 16
+        for ch in range(1,17):
+            _chAddress = _address + str(ch).rjust(2,"0")
+            _chName = "Shade_" + _chAddress
+            if not self.poly.getNode(_chAddress):
+                if _chAddress in self.travelTime:
+                    self.poly.addNode(SomfyShade(self.poly, self.address, _chAddress, _chName, self.travelTime[_chAddress]))
+                else:
+                    self.poly.addNode(SomfyShade(self.poly, self.address, _chAddress, _chName, None))
+                #TODO: Add ability to create Blinds, which use two channels (one for up/down, one for tilt)
                     
     def connectSerial(self):     
         if self._ser is not None:
@@ -189,47 +195,36 @@ class Controller(polyinterface.Controller):
                 {'driver': 'GV1', 'value': 0, 'uom': 2}] #Serial Port Connected
 
 
-class SomfyShade(polyinterface.Node):
-    """
-    Class Variables:
-    self.primary: String address of the Controller node.
-    self.parent: Easy access to the Controller Class from the node itself.
-    self.address: String address of this Node 14 character limit. (ISY limitation)
-    self.added: Boolean Confirmed added to ISY
-
-    Class Methods:
-    start(): This method is called once polyglot confirms the node is added to ISY.
-    setDriver('ST', 1, report = True, force = False):
-        This sets the driver 'ST' to 1. If report is False we do not report it to
-        Polyglot/ISY. If force is True, we send a report even if the value hasn't changed.
-    reportDrivers(): Forces a full update of all drivers to Polyglot/ISY.
-    query(): Called when ISY sends a query request to Polyglot for this specific node
-    """
-    def __init__(self, parent, primary, address, name):
-        super(SomfyShade, self).__init__(parent, primary, address, name)
+class SomfyShade(udi_interface.Node):
+    def __init__(self, polyglot, primary, address, name, travelTime):
+        super(SomfyShade, self).__init__(polyglot, primary, address, name)
         self.position = -1 #TODO: Is there a way to read the current values from this node in the ISY (if it exists already) and populate local variables here?  It would help not to lose track of shade state if restarting the node server
         self.lastCmdTime = 0
         self.lastCmd = ""
+        self.parent = polyglot.getNode(primary)
         _msg = "Timer created for " + address
         self.timer = Timer(1,LOGGER.debug,[_msg])
+        if travelTime is not None:
+            self.travelTime = float(travelTime)
+        else:
+            self.travelTime = 8
+
+        polyglot.subscribe(polyglot.START, self.start, address)
 
     def start(self):
         """
         Read this shade's travel time from the polyglot config.
-        Since the URTSii does not track/report shade position, this will allow for infering the shade's position based on
-        the time it takes for the shade to transition from fully closed to fully open
+        Since the URTSii does not track/report shade position, this will
+        allow for infering the shade's position based on the time it takes
+        for the shade to transition from fully closed to fully open
         """
-        if self.address in self.parent.polyConfig['customParams']:
-            try:
-                self.travelTime = float(self.parent.polyConfig['customParams'][self.address])
-                self.setDriver('GV1',self.travelTime)
-                return True
-            except Exception as ex:
-                LOGGER.error('Error setting travel time from config for %s: %s', self.address, str(ex))
+        try:
+            self.setDriver('GV1',self.travelTime)
+            return True
+        except Exception as ex:
+            LOGGER.error('Error setting travel time from config for %s: %s', self.address, str(ex))
         else:
             LOGGER.info('No travel time found in polyglot config for %s.  Defaulting to 8 seconds', self.address)
-        self.travelTime = 8
-        self.setDriver('GV1',self.travelTime)
 
     def query(self, command=''):
         if self.position >= 0.: self.setDriver('ST',int(self.position))
@@ -400,10 +395,12 @@ class SomfyShade(polyinterface.Node):
 
 if __name__ == "__main__":
     try:
-        polyglot = polyinterface.Interface('Somfy')
+        polyglot = udi_interface.Interface([])
         polyglot.start()
-        control = Controller(polyglot)
-        control.runForever()
+        polyglot.updateProfile()
+        polyglot.setCustomParamsDoc()
+        Controller(polyglot, 'controller', 'controller', 'Somfy')
+        polyglot.runForever()
 
     except (KeyboardInterrupt, SystemExit):
         sys.exit(0)

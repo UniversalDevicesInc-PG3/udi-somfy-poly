@@ -1,9 +1,9 @@
-# Somfy Node Server for Polyglot v2
+# Somfy Node Server for Polyglot v3
 This node server allows the [UDI ISY 994i](http://universal-devices.com/) to control Somfy RTS shades using a [Somfy URTSii serial interface](https://www.somfysystems.com/products/1810872/universal-rts-interface)
 The URTSii can be connected to the machine running Polyglot directly or the commands can be issued remotely.  See [Here](http://pythonhosted.org/pyserial/url_handlers.html#overview) and instructions below.
 
 #### Installation
-This assumes you have already installed polyglot v2, see [here](https://github.com/Einstein42/udi-polyglotv2)
+This assumes you have already installed polyglot v3, see [here](https://github.com/Einstein42/udi-polyglotv2)
 1. Backup ISY
 1. Clone this project into the /.polyglot/nodeservers folder for the user that runs polyglot v2
 	*	Assuming you're logged in as the user that runs polyglot, 'cd ~/.polyglot/nodeservers'
