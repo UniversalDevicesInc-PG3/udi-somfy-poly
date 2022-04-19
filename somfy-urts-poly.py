@@ -32,7 +32,7 @@ class Controller(udi_interface.Node):
         polyglot.subscribe(polyglot.POLL, self.poll)
 
         polyglot.ready()
-        polyglot.addNode(self)
+        polyglot.addNode(self, conn_status="ST")
 
     def parameterHandler(self, params):
         self.poly.Notices.clear()
